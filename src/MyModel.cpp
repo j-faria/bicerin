@@ -21,7 +21,7 @@ using namespace DNest4;
 #define DONEW false  
 
 MyModel::MyModel()
-:objects(5, 0, true, MyConditionalPrior())
+:objects(5, 5, false, MyConditionalPrior())
 ,mu(Data::get_instance().get_t().size())
 ,C(Data::get_instance().get_t().size(), Data::get_instance().get_t().size())
 {

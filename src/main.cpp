@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 	//cout<<endl;
 
 	//Data::get_instance().load("fake_data.txt");
-	Data::get_instance().loadnew("data/PlSy14.rdb");
+	Data::get_instance().loadnew("data/PlSy1.rdb");
 
     //return 0;
 
