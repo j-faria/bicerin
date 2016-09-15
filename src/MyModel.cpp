@@ -8,7 +8,7 @@
 #include <chrono>
 #include <typeinfo>  //for 'typeid' to work  
 
-//#include "HODLR_Tree.hpp"
+#include "HODLR_Tree.hpp"
 
 
 using namespace std;
@@ -18,26 +18,26 @@ using namespace DNest4;
 // get the instance for the full dataset
 //DataSet& full = DataSet::getRef("full");
 
-#define DONEW false  
+#define DONEW true  
 
 MyModel::MyModel()
-:objects(5, 0, true, MyConditionalPrior())
+:objects(5, 5, false, MyConditionalPrior())
 ,mu(Data::get_instance().get_t().size())
 ,C(Data::get_instance().get_t().size(), Data::get_instance().get_t().size())
 {
-    //setupHODLR();
+    setupHODLR();
 }
 
 
-/*void MyModel::setupHODLR()
+void MyModel::setupHODLR()
 {
-    const vector<double>& t = full.get_t();
+    const vector<double>& t = Data::get_instance().get_t();
     
     kernel = new QPkernel(t);
     kernel->set_hyperpars(1., 1., 1., 1.);  // not sure if this is needed
 
-    A = new HODLR_Tree<QPkernel>(kernel, full.N, 150);
-}*/
+    A = new HODLR_Tree<QPkernel>(kernel, t.size(), 150);
+}
 
 void MyModel::from_prior(RNG& rng)
 {
@@ -88,7 +88,7 @@ void MyModel::calculate_C()
         //auto begin = std::chrono::high_resolution_clock::now();  // start timing
 
         kernel->set_hyperpars(eta1, eta2, eta3, eta4);
-        cout << eta1 << "   " << eta2 << "   " << eta3 << "   " << eta4 << "   ";
+        //cout << eta1 << "   " << eta2 << "   " << eta3 << "   " << eta4 << "   ";
         VectorXd yvar(t.size());
         for (int i = 0; i < t.size(); ++i)
             yvar(i) = eta1*eta1 + sig[i] * sig[i] + extra_sigma * extra_sigma;
