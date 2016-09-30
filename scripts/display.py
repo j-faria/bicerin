@@ -1,5 +1,12 @@
+
+pyqt = True
+if pyqt:
+    import pyqtgraph as pg
+    from pyqtgraph.Qt import QtCore, QtGui
+
 import matplotlib.pyplot as plt
 # import matplotlib
+
 import numpy as np
 from scipy.stats import gaussian_kde
 import sys
@@ -19,8 +26,9 @@ reload(corner)
 import corner_analytic
 reload(corner_analytic)
 
-plt.rc("font", size=14, family="serif", serif="Computer Sans")
-plt.rc("text", usetex=True)
+if not pyqt:
+    plt.rc("font", size=14, family="serif", serif="Computer Sans")
+    plt.rc("text", usetex=True)
 
 def apply_argsort(arr1, arr2, axis=-1):
     """
@@ -138,16 +146,31 @@ class DisplayResults(object):
 
 
     def make_plot1(self):
-        plt.figure()
-        n, bins, _ = plt.hist(self.posterior_sample[:, self.index_component], 100)
-        plt.xlabel('Number of Planets')
-        plt.ylabel('Number of Posterior Samples')
-        plt.xlim([-0.5, self.max_components+.5])
+        # bins = [0 ... max_components]
+        bins = range(self.max_components+1)
+        # add intervals of 0.1
+        _ = [bins.insert(i, bins[i-1]+0.1) for i in range(1, 2*(self.max_components+1), 2)]
 
-        nn = n[np.nonzero(n)]
+        n, bins = np.histogram(self.posterior_sample[:, self.index_component], bins=bins)
+
+        if pyqt:
+            win = pg.GraphicsWindow()
+            win.setWindowTitle('Np posterior')
+            plt1 = win.addPlot()
+            curve = pg.PlotCurveItem(bins, n, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+            plt1.addItem(curve)
+            QtGui.QApplication.instance().exec_()
+        else:
+            plt.figure()
+            n, bins, _ = plt.hist(self.posterior_sample[:, self.index_component], 100)
+            plt.xlabel('Number of Planets')
+            plt.ylabel('Number of Posterior Samples')
+            plt.xlim([-0.5, self.max_components+.5])
+            plt.show()
+
+        nn = n[np.nonzero(n)].astype(float)
         print 'probability ratios: ', nn.flat[1:] / nn.flat[:-1]
 
-        plt.show()
 
 
     def get_marginals(self):
