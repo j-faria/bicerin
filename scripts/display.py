@@ -23,8 +23,8 @@ colors = ["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"]
 sys.path.append('/home/joao/Work/corner/build/lib')
 import corner
 reload(corner)
-import corner_analytic
-reload(corner_analytic)
+# import corner_analytic
+# reload(corner_analytic)
 
 if not pyqt:
     plt.rc("font", size=14, family="serif", serif="Computer Sans")
@@ -457,8 +457,8 @@ class DisplayResults(object):
         # self.periods = np.exp(self.Tall[:,0])
         # self.periods[self.periods == 1.] = -99
         # self.periods = np.ma.masked_invalid(self.periods)
-        self.pmin = 20. #self.periods.mean() - 2*self.periods.std()
-        self.pmax = 100. #self.periods.mean() + 2*self.periods.std()
+        self.pmin = 10. #self.periods.mean() - 2*self.periods.std()
+        self.pmax = 40. #self.periods.mean() + 2*self.periods.std()
 
         available_etas = [v for v in dir(self) if v.startswith('eta')]
         labels = ['$s$'] + ['$\eta_%d$' % (i+1) for i in range(len(available_etas))]
