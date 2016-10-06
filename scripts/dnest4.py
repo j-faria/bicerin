@@ -252,6 +252,7 @@ def postprocess(temperature=1., numResampleLogX=1, plot=True, loaded=[], \
     posterior_sample = np.zeros((N, sample.shape[1]))
     w = P_samples
     w = w/np.max(w)
+    indices = []
     if save:
         np.savetxt('weights.txt', w) # Save weights
     for i in range(0, N):
@@ -259,8 +260,11 @@ def postprocess(temperature=1., numResampleLogX=1, plot=True, loaded=[], \
             which = np.random.randint(sample.shape[0])
             if np.random.rand() <= w[which]:
                 break
+        indices.append(which)
         posterior_sample[i,:] = sample[which,:]
+    indices = np.array(indices)
     if save:
+        np.savetxt("indices.txt", indices, fmt='%d')
         np.savetxt("posterior_sample.txt", posterior_sample)
 
     if plot:

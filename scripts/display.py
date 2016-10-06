@@ -72,9 +72,9 @@ class DisplayResults(object):
         # self.data = np.loadtxt('HD41248_harps_mean_corr.rdb')
         # self.data = np.loadtxt('BT1.txt')
         self.data = np.loadtxt(data_file, skiprows=2)
-        mean_vrad = self.data[:, 1].mean()
-        self.data[:, 1] = (self.data[:, 1] - mean_vrad)*1e3 + mean_vrad
-        self.data[:, 2] *= 1e3
+        # mean_vrad = self.data[:, 1].mean()
+        # self.data[:, 1] = (self.data[:, 1] - mean_vrad)*1e3 + mean_vrad
+        # self.data[:, 2] *= 1e3
 
         # self.truth = np.loadtxt('fake_data_like_nuoph.truth')
         # posterior_samples_file = 'resultsCorot7/upto10/posterior_sample.txt'
@@ -526,25 +526,26 @@ class DisplayResults(object):
 
 
 
-    def make_plot6(self, plot_samples=False, show=True, N=0):
+    def make_plot6(self, plot_samples=False, show=True, N=None):
         """ 
         plot data with maximum likelihood solution and optionally
         random posterior samples
         """
-        l = Lookup(cache=True)
+        from OPEN.ext.keplerian import keplerian
+
         data = self.data
-        t = self.data[:,0]
-        tt = np.linspace(t[0], t[-1], 3000)
+        t = data[:,0]
+        tt = np.linspace(t[0], t[-1], 500)
 
         kde = gaussian_kde(t)
-        ttt = kde.resample(50000)
+        ttt = kde.resample(5000)
 
         tt = np.append(t, tt)
         tt = np.append(t, ttt)
         tt.sort()
 
-        y = self.data[:,1]
-        yerr = self.data[:,2]
+        y = data[:,1]
+        yerr = data[:,2]
 
         ic = self.index_component
 
@@ -598,19 +599,28 @@ class DisplayResults(object):
                 ax.plot(tt, mu, 'k-', alpha=0.2)
 
         ##################################
-        # the maximum likelihood solution:
+        ## the maximum likelihood solution:
+        ## get the log likelihoods of the posterior samples
+        logLs = np.loadtxt('sample_info.txt', usecols=(1,))
+        inds = np.loadtxt('indices.txt', dtype=int)
+        logLs = logLs[inds]
+
         if N is None:
-            i = self.posterior_sample[:, -1].argmax()
+            print logLs.max()
+            i = logLs.argmax()
             pars = self.posterior_sample[i, :]
         else:
-            mask = self.posterior_sample[:, self.index_component]==N
-            i = self.posterior_sample[mask, -1].argmax()
+            pass
+            mask = self.posterior_sample[:, ic]==N
+            print logLs[mask].max()
+            i = logLs[mask].argmax()
             pars = self.posterior_sample[mask][i, :]
+        print pars
         
         ##################################
         # the median solution restricted:
         # pars = np.median(self.posterior_sample[mask], axis=0)
-        print pars
+        # print pars
 
         # print pars
         velt = np.zeros_like(t)
@@ -622,7 +632,7 @@ class DisplayResults(object):
         eta3 = pars[3]
         eta4 = pars[4]
         print 'GP pars: ', extra_sigma, eta1, eta2, eta3, eta4
-        background = pars[-2]
+        background = pars[-1]
 
         self.kernel = eta1 * kernels.ExpSquaredKernel(eta2) * kernels.ExpSine2Kernel(eta4, eta3)
         self.gp = george.GP(self.kernel, mean=background)
@@ -635,23 +645,23 @@ class DisplayResults(object):
         nplanets = self.max_components
         ii = range(1, 5*nplanets, nplanets)
         for j in range(int(pars[ic])):
-            T = np.exp(pars[ic+ii[0]+j])
-            A = pars[ic+ii[1]+j]
-            phi = pars[ic+ii[2]+j]
-            ecc = pars[ic+ii[3]+j]
-            v0 = np.sqrt(1 - ecc)
-            viewing_angle = pars[ic+ii[4]+j]
-            
-            print '- planet pars: ', T, A, phi, ecc, viewing_angle
-            arg = 2.*np.pi*t/T + phi
-            rv = A * l.evaluate(arg, v0, viewing_angle)
+
+            P = np.exp(pars[self.index_component + 1 + 0*self.max_components + j])
+            K = pars[self.index_component + 1 + 1*self.max_components + j]
+            phi = pars[self.index_component + 1 + 2*self.max_components + j]
+            t0 = t[0] - (P*phi)/(2.*np.pi)
+            ecc = pars[self.index_component + 1 + 3*self.max_components + j]
+            w = pars[self.index_component + 1 + 4*self.max_components + j]
+            # vsys = self.posterior_sample[i, -1]
+            rv = keplerian(t, P, K, ecc, w, t0, 0.)
             velt_individual[:,j] = rv
             velt += rv
 
-            arg = 2.*np.pi*tt/T + phi
-            rv = A * l.evaluate(arg, v0, viewing_angle)
+            rv = keplerian(tt, P, K, ecc, w, t0, 0.)
             veltt_individual[:,j] = rv
             veltt += rv
+
+            print '- planet pars: ', P, K, phi, ecc, t0, w
 
         mu = self.gp.predict(y-velt, tt, mean_only=True)
         mut = self.gp.predict(y-velt, t, mean_only=True)
@@ -663,14 +673,19 @@ class DisplayResults(object):
 
         print ''
 
-        ax = fig.add_subplot(312, sharex=ax)
+        ax = fig.add_subplot(312, sharex=ax, sharey=ax)
         ax.errorbar(data[:,0], data[:,1], fmt='ro', yerr=data[:,2])
 
 
         ##################################
         # the median solution:
-        self.get_medians()
-        pars = self.medians
+        if N is None:
+            pars = np.median(self.posterior_sample, axis=0)
+        else:
+            mask = self.posterior_sample[:, ic]==N
+            pars = np.median(self.posterior_sample[mask], axis=0)
+        print pars
+
         velt = np.zeros_like(t)
         veltt = np.zeros_like(tt)
 
@@ -680,7 +695,7 @@ class DisplayResults(object):
         eta3 = pars[3]
         eta4 = pars[4]
         print 'GP pars: ', extra_sigma, eta1, eta2, eta3, eta4
-        background = pars[-2]
+        background = pars[-1]
 
         self.kernel = eta1 * kernels.ExpSquaredKernel(eta2) * kernels.ExpSine2Kernel(eta4, eta3)
         self.gp = george.GP(self.kernel, mean=background)
@@ -715,25 +730,32 @@ class DisplayResults(object):
             # ax.plot(tt, rv, 'k:', lw=1, alpha=1)
 
 
-        mu = self.gp.predict(y-velt, tt, mean_only=True)
+        mu, cov = self.gp.predict(y-velt, tt)
         mut = self.gp.predict(y-velt, t, mean_only=True)
         # mu, cov = self.gp.predict(y-velt, tt)
-        # std = np.sqrt(np.diag(cov))
+        std = np.sqrt(np.diag(cov))
         
         mu += veltt
-        # std += veltt
+        std += veltt
 
         ax.plot(tt, mu, 'k-', lw=1.5, alpha=0.9, label='median')
-        # ax.fill_between(tt, y1=mu-std, y2=mu+std, alpha=0.1)
-
+        ax.fill_between(tt, y1=mu-std, y2=mu+std, alpha=0.1)
+        ylims = ax.get_ylim()
         # ax.plot(tt, np.zeros_like(tt), 'o')
 
         ax.legend(frameon=False, loc='best')
 
 
         ax = fig.add_subplot(313, sharex=ax)
-        ax.plot(t, y - mut_maxlike, 'ro-', alpha=0.9)
-        ax.axhline(y=0)
+        resid = y - mut_maxlike
+        ax.plot(t, resid, 'ro', alpha=0.9)
+        ax.set_ylim(ylims - background)
+        ax.axhline(y=0, ls='--')
+
+
+        plt.figure()
+        plt.hist(resid / yerr, bins=50)
+
 
         if show: plt.show()
 
