@@ -133,7 +133,7 @@ class DisplayResults(object):
         if '5' in options:
             self.make_plot5()
         if '6' in options:
-            self.make_plot6()
+            self.make_plot6(N=0)
         if '7' in options:
             self.make_plot7()
         if 'prior' in options:
