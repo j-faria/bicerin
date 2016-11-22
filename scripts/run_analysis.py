@@ -1,4 +1,4 @@
-# import sys
+import sys
 import os
 import os.path as path
 import re
@@ -52,11 +52,16 @@ with open(path.join(top_level, 'src', 'main.cpp')) as f:
 
 print 'Data file in "main.cpp" seems to be: %s' % data_file
 
+try:
+    star = re.findall('HD\d+', data_file)[0]
+    results_path = path.join('results', star)
+    print 'This is star %s, so results will go to %s' % (star, results_path)
+except IndexError:
+    system_number = int(re.findall('\d+', data_file)[0])
+    results_path = path.join('results', 'PlSy%d' % system_number)
+    print 'This is system number %d, so results will go to %s' % (system_number, results_path)
 
-system_number = int(re.findall('\d+', data_file)[0])
-results_path = path.join('results', 'PlSy%d' % system_number)
-print 'This is system number %d, so results will go to %s' % (system_number, results_path)
-
+# sys.exit(0)
 
 results_path = path.join(top_level, results_path)
 dir_exists_or_create(results_path)
@@ -128,7 +133,7 @@ if cluster:
     os.chdir(old_cwd)
 
 else:
-    nthreads = 1
+    nthreads = 2
     print 'Starting "main" with %d threads...' % nthreads
     os.chdir(top_level)
     cmd = ['./main', '-t', str(nthreads), '-o', options_file]
