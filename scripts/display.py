@@ -334,10 +334,20 @@ class DisplayResults(object):
     def make_plot2(self):
         T = self.T
         plt.figure()
-        plt.hist(np.exp(T), bins=np.logspace(min(T), max(T), base=np.e, num=1000), alpha=0.5)
+
+        year = 365.25
+        plt.axvline(x=year, ls='--', color='r', lw=3, alpha=0.6)
+        plt.axvline(x=year/2., ls='--', color='r', lw=3, alpha=0.6)
+        # plt.axvline(x=year/3., ls='--', color='r', lw=3, alpha=0.6)
+
+        plt.axvline(x=self.data[:,0].ptp(), ls='--', color='b', lw=4, alpha=0.5)
+
+        bins = 10 ** np.linspace(np.log10(0.5), np.log10(1e7), 100)
+        plt.hist(np.exp(T), bins=bins, alpha=0.5)
+
         plt.xlabel(r'(Period/days)')
         plt.gca().set_xscale("log")
-        plt.gca().set_yscale("symlog")
+        # plt.gca().set_yscale("symlog")
         #for i in xrange(1009, 1009 + int(truth[1008])):
         #  axvline(truth[i]/log(10.), color='r')
         plt.ylabel('Number of Posterior Samples')
@@ -457,8 +467,8 @@ class DisplayResults(object):
         # self.periods = np.exp(self.Tall[:,0])
         # self.periods[self.periods == 1.] = -99
         # self.periods = np.ma.masked_invalid(self.periods)
-        self.pmin = 20. #self.periods.mean() - 2*self.periods.std()
-        self.pmax = 100. #self.periods.mean() + 2*self.periods.std()
+        self.pmin = 10. #self.periods.mean() - 2*self.periods.std()
+        self.pmax = 40. #self.periods.mean() + 2*self.periods.std()
 
         available_etas = [v for v in dir(self) if v.startswith('eta')]
         labels = ['$s$'] + ['$\eta_%d$' % (i+1) for i in range(len(available_etas))]
@@ -1016,10 +1026,10 @@ class DisplayResults(object):
         if planet is None:
             corner.corner(self.post_samples, labels=labels, show_titles=False,
                                      plot_contours=False, plot_datapoints=True, plot_density=False,
-    #                                  # fill_contours=True, smooth=True,
-    #                                  # contourf_kwargs={'cmap':plt.get_cmap('afmhot'), 'colors':None},
-    #                                  hexbin_kwargs={'cmap':plt.get_cmap('afmhot_r'), 'bins':'log'},
-    #                                  hist_kwargs={'normed':True},
+                                     # fill_contours=True, smooth=True,
+                                     # contourf_kwargs={'cmap':plt.get_cmap('afmhot'), 'colors':None},
+                                     # hexbin_kwargs={'cmap':plt.get_cmap('afmhot_r'), 'bins':'log'},
+                                     # hist_kwargs={'normed':True},
                                      range=[1., 1., (0, 2*np.pi), (0., 1.), (0, 2*np.pi)],
                                      shared_axis=True, data_kwargs={'alpha':1, 'ms':3},
                                      )
