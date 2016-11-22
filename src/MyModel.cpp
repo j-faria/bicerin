@@ -18,10 +18,10 @@ using namespace DNest4;
 // get the instance for the full dataset
 //DataSet& full = DataSet::getRef("full");
 
-#define DONEW true  
+#define DONEW false  
 
 MyModel::MyModel()
-:objects(5, 5, false, MyConditionalPrior())
+:objects(5, 10, false, MyConditionalPrior())
 ,mu(Data::get_instance().get_t().size())
 ,C(Data::get_instance().get_t().size(), Data::get_instance().get_t().size())
 {
