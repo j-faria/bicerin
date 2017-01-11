@@ -1,5 +1,5 @@
 
-pyqt = True
+pyqt = False
 if pyqt:
     import pyqtgraph as pg
     from pyqtgraph.Qt import QtCore, QtGui
@@ -73,8 +73,8 @@ class DisplayResults(object):
         # self.data = np.loadtxt('BT1.txt')
         self.data = np.loadtxt(data_file, skiprows=2)
         mean_vrad = self.data[:, 1].mean()
-        self.data[:, 1] = (self.data[:, 1] - mean_vrad)*1e3 + mean_vrad
-        self.data[:, 2] *= 1e3
+        # self.data[:, 1] = (self.data[:, 1] - mean_vrad)*1e3 + mean_vrad
+        # self.data[:, 2] *= 1e3
 
         # self.truth = np.loadtxt('fake_data_like_nuoph.truth')
         # posterior_samples_file = 'resultsCorot7/upto10/posterior_sample.txt'
@@ -149,7 +149,7 @@ class DisplayResults(object):
         # bins = [0 ... max_components]
         bins = range(self.max_components+1)
         # add intervals of 0.1
-        _ = [bins.insert(i, bins[i-1]+0.1) for i in range(1, 2*(self.max_components+1), 2)]
+        _ = [bins.insert(i, bins[i-1]+0.4) for i in range(1, 2*(self.max_components+1), 2)]
 
         n, bins = np.histogram(self.posterior_sample[:, self.index_component], bins=bins)
 
@@ -162,7 +162,7 @@ class DisplayResults(object):
             QtGui.QApplication.instance().exec_()
         else:
             plt.figure()
-            n, bins, _ = plt.hist(self.posterior_sample[:, self.index_component], 100)
+            n, bins, _ = plt.hist(self.posterior_sample[:, self.index_component], bins, align='left')
             plt.xlabel('Number of Planets')
             plt.ylabel('Number of Posterior Samples')
             plt.xlim([-0.5, self.max_components+.5])
@@ -754,7 +754,7 @@ class DisplayResults(object):
         """ plot data with random posterior samples """
         from OPEN.ext.keplerian import keplerian
         data = self.data
-        t = self.data[:,0]
+        t = self.data[:,0].copy()
 
         ttt = np.linspace(t.min(), t.max(), 10000)
 
@@ -763,14 +763,13 @@ class DisplayResults(object):
         tt = np.append(t, tt)
         tt.sort()
 
-        y = self.data[:,1]
-        yerr = self.data[:,2]
+        y = self.data[:,1].copy()
+        yerr = self.data[:,2].copy()
 
         print 'Data has', y.size, 'points'
 
         fig = plt.figure(figsize=(10,6))
         ax = fig.add_subplot(111)
-        ax.errorbar(data[:,0], data[:,1], fmt='b.', yerr=data[:,2])
 
 
         # array with posterior sample indices that have at least one planet
@@ -805,8 +804,8 @@ class DisplayResults(object):
             
             nplanets = int(pars[self.index_component])
             print nplanets, 'planets'
-            if nplanets != 1:
-                continue
+            # if nplanets != 1:
+            #     continue
 
             # vel = np.zeros_like(tt)
             # print pars
@@ -865,7 +864,7 @@ class DisplayResults(object):
                 v1 = keplerian(ttt, P, K, ecc, w, t0, 0.)
                 v += v1
                 velt += keplerian(t, P, K, ecc, w, t0, 0.) 
-            ax.plot(ttt, v, alpha=0.6, color='g')
+            # ax.plot(ttt, v, alpha=0.6, color='g')
 
             mu = self.gp.predict(y-velt, ttt, mean_only=True)
             # mut = self.gp.predict(y-velt, t, mean_only=True)
@@ -878,6 +877,11 @@ class DisplayResults(object):
             ax.plot(ttt, mu, 'k-', lw=1.5, alpha=0.05)
 
 
+        ax.errorbar(data[:,0], data[:,1], fmt='bo', capsize=0, yerr=data[:,2])
+
+
+        ax.set_xlabel('Time [days]')
+        ax.set_ylabel('RV [km/s]')
         # self.get_medians()
         # pars = self.medians
         # extra_sigma, eta1, eta2, eta3, eta4 = pars[:5]
@@ -1079,7 +1083,7 @@ class DisplayResults(object):
             t0 = t[0] - (P*phi)/(2.*np.pi)
             ecc = pars[3]
             w = pars[4]
-            vsys = self.posterior_sample[i, -1]
+            vsys = self.post_samples[i, -1]
             v = keplerian(tt, P, K, ecc, w, t0, vsys)
             ax.plot(tt, v, alpha=0.1, color='k')
 
